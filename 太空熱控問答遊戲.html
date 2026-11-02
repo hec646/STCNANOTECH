@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>太空熱控問答遊戲</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f4f1fb;--card:#fff;--text:#1f1b2e;--muted:#6b6580;--c1:#e21b3c;--c2:#1368ce;--c3:#d89e00;--c4:#26890c;--ok:#26890c;--bad:#e21b3c;--accent:#46178f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1330;--card:#2a2147;--text:#f3f0ff;--muted:#b3abd1;--accent:#a678f0}}
+:root[data-theme="dark"]{--bg:#1a1330;--card:#2a2147;--text:#f3f0ff;--muted:#b3abd1;--accent:#a678f0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center}
+main{width:100%;max-width:760px;padding:20px 16px 32px}
+.card{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+h1{margin:0 0 8px;font-size:1.7rem}
+p{line-height:1.6;color:var(--muted)}
+button{font:inherit;cursor:pointer;border:0}
+.go{background:var(--accent);color:#fff;font-weight:700;font-size:1.1rem;padding:14px 32px;border-radius:12px;margin-top:12px}
+.bar{display:flex;justify-content:space-between;font-weight:700;margin-bottom:10px}
+.timer{height:10px;background:var(--card);border-radius:6px;overflow:hidden;margin-bottom:16px}
+.timer i{display:block;height:100%;width:100%;background:var(--accent);transform-origin:left}
+.q{font-size:1.35rem;font-weight:700;line-height:1.5;text-align:center;padding:22px 16px;background:var(--card);border-radius:14px;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.opts{grid-template-columns:1fr}}
+.opt{color:#fff;font-weight:700;font-size:1.05rem;padding:20px 14px;border-radius:12px;text-align:left;display:flex;gap:10px;align-items:center;min-height:76px}
+.opt:nth-child(1){background:var(--c1)}.opt:nth-child(2){background:var(--c2)}.opt:nth-child(3){background:var(--c3)}.opt:nth-child(4){background:var(--c4)}
+.opt.dim{opacity:.3}.opt.right{outline:4px solid var(--ok);outline-offset:2px}
+.opt:disabled{cursor:default}
+.fb{margin-top:16px;text-align:center;font-weight:700;font-size:1.15rem}
+.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.big{font-size:3rem;font-weight:800;color:var(--accent);text-align:center}
+ul{padding-left:20px;color:var(--muted);line-height:1.7;text-align:left}
+.center{text-align:center}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+var Q=[
+["太陽的熱能如何穿越太空，抵達地球？",["靠空氣傳導","靠熱輻射","靠風吹過來","靠聲音傳播"],1,20],
+["在太空真空環境中，衛星主要靠什麼向外散熱？",["電風扇","空氣對流","熱輻射","吹冷氣"],2,20],
+["下列哪一種物體會發出熱輻射？",["只有太陽","只有火焰","只有高溫金屬","所有高於絕對零度的物體"],3,20],
+["為什麼太空中的衛星需要控制溫度？",["避免電子設備過熱或過冷","讓衛星飛得更快","讓衛星變得更輕","增加衛星聲音"],0,20],
+["熱像儀主要偵測物體發出或反射的哪種電磁波？",["無線電波","紅外線","X光","紫外線"],1,20],
+["衛星表面的特殊鍍膜，可以幫助控制什麼？",["熱能的吸收與散發","衛星的重力","太空中的聲音","衛星的飛行速度"],0,30],
+["高紅外線放射率的鍍膜，主要有什麼作用？",["讓衛星產生氧氣","增加衛星重量","幫助表面輻射散熱","阻止所有光線"],2,30],
+["兩片材料溫度相同，熱像儀畫面一定一樣嗎？",["一定完全相同","不一定，會受到放射率影響","只看材料重量","只看材料厚度"],1,30],
+["太空船外部常見的金色或銀色薄膜，主要用途之一是什麼？",["讓太空船更漂亮","增加空氣流動","發出聲音","減少不必要的熱交換"],3,30],
+["如果你是衛星熱控工程師，應該如何選擇鍍膜？",["只選最亮的","只選最黑的","依吸熱與散熱需求選擇","只選最厚的"],2,30]
+];
+var SH=["▲","◆","●","■"],app=document.getElementById("app");
+var i,score,streak,right,wrong,tm,t0,locked;
+function start(){i=0;score=0;streak=0;right=0;wrong=[];
+ app.innerHTML='<div class="card center"><h1>🛰️ 太空熱控問答遊戲</h1><p>共 '+Q.length+' 題，答得越快，得分越高（每題最高 1000 分）。</p><button class="go" id="s">開始遊戲</button></div>';
+ document.getElementById("s").onclick=show}
+function show(){
+ var q=Q[i];locked=false;
+ var h='<div class="bar"><span>第 '+(i+1)+' / '+Q.length+' 題</span><span>分數：'+score+'</span></div><div class="timer"><i id="tb"></i></div><div class="q">'+q[0]+'</div><div class="opts">';
+ for(var k=0;k<4;k++)h+='<button class="opt" data-k="'+k+'"><span>'+SH[k]+'</span><span>'+q[1][k]+'</span></button>';
+ app.innerHTML=h+'</div><div id="fb"></div>';
+ var b=app.querySelectorAll(".opt");
+ for(k=0;k<b.length;k++)b[k].onclick=function(){pick(+this.getAttribute("data-k"))};
+ t0=Date.now();var tb=document.getElementById("tb"),T=q[3]*1000;
+ clearInterval(tm);
+ tm=setInterval(function(){var r=1-(Date.now()-t0)/T;tb.style.transform="scaleX("+Math.max(r,0)+")";if(r<=0){clearInterval(tm);pick(-1)}},50)}
+function pick(k){
+ if(locked)return;locked=true;clearInterval(tm);
+ var q=Q[i],T=q[3]*1000,el=Math.min(Date.now()-t0,T),ok=k===q[2],gain=0;
+ if(ok){gain=Math.round(1000*(1-(el/T)/2));if(streak>0)gain+=Math.min(streak,5)*100;streak++;right++;score+=gain}
+ else{streak=0;wrong.push(i)}
+ var b=app.querySelectorAll(".opt");
+ for(var j=0;j<b.length;j++){b[j].disabled=true;if(j===q[2])b[j].className+=" right";else if(j!==k||ok)b[j].className+=" dim"}
+ var msg=ok?"✅ 答對了！+"+gain+" 分":(k<0?"⏰ 時間到！":"❌ 答錯了")+" 正確答案：「"+q[1][q[2]]+"」";
+ document.getElementById("fb").innerHTML='<div class="fb '+(ok?"ok":"bad")+'">'+msg+'</div><div class="center"><button class="go" id="n">'+(i+1<Q.length?"下一題":"查看結果")+'</button></div>';
+ document.getElementById("n").onclick=function(){i++;i<Q.length?show():end()}}
+function end(){
+ var h='<div class="card center"><h1>遊戲結束 🎉</h1><div class="big">'+score+' 分</div><p>答對 '+right+' / '+Q.length+' 題</p>';
+ if(wrong.length){h+='<p style="margin-bottom:0"><b>答錯的題目：</b></p><ul>';
+  for(var j=0;j<wrong.length;j++){var q=Q[wrong[j]];h+='<li>'+q[0]+'<br>答案：'+q[1][q[2]]+'</li>'}h+='</ul>'}
+ else h+='<p>全部答對，太厲害了！</p>';
+ app.innerHTML=h+'<button class="go" id="r">再玩一次</button></div>';
+ document.getElementById("r").onclick=start}
+start();
+</script>
+</body>
+</html>
